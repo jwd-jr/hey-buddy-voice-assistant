@@ -1,8 +1,10 @@
 import subprocess
+import os
 
 APPS = {
     "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "vs code": "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
+    "vscode": "C:\\Users\\Lenovo\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe",
     "notepad": "notepad.exe",
     "calculator": "calc.exe",
     "file explorer": "explorer.exe",
@@ -17,17 +19,12 @@ def open_app(command):
     for app_name, app_path in APPS.items():
         if app_name in command:
             try:
+                if not os.path.exists(app_path) and not app_path.endswith(".exe"):
+                    return f"Could not find {app_name} on this laptop"
                 subprocess.Popen(app_path)
                 print(f"✅ Opening {app_name}...")
                 return f"Opening {app_name}"
             except Exception as e:
-                print(f"❌ Could not open {app_name}: {e}")
+                print(f"❌ Error: {e}")
                 return f"Could not open {app_name}"
-    return "App not found"
-
-if __name__ == "__main__":
-    print(open_app("open chrome"))
-    print(open_app("open spotify"))
-    print(open_app("open word"))
-    print(open_app("open vscode"))
-    print(open_app("open calculator"))
+    return "Sorry, I don't know that app!"

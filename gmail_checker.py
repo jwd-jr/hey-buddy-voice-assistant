@@ -1,10 +1,9 @@
 import os
+from datetime import datetime, timedelta
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
-import base64
-from groq_summarizer import summarize_emails
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
@@ -24,18 +23,24 @@ def get_gmail_service():
 
 def fetch_emails():
     service = get_gmail_service()
+
+    # Get time 24 hours ago
+    past_24_hours = datetime.now() - timedelta(hours=24)
+    date_filter = past_24_hours.strftime('%Y/%m/%d')
+
     results = service.users().messages().list(
-        userId='me', 
-        labelIds=['UNREAD'], 
-        maxResults=5
-    ).execute()
-    
+    userId='me',
+    labelIds=['UNREAD'],
+    q=f'after:{date_filter} category:primary',
+    maxResults=100
+).execute()
+
     messages = results.get('messages', [])
     emails = []
 
     for msg in messages:
         data = service.users().messages().get(
-            userId='me', 
+            userId='me',
             id=msg['id'],
             format='metadata',
             metadataHeaders=['From', 'Subject']
@@ -51,27 +56,5 @@ def fetch_emails():
             'subject': subject,
             'snippet': snippet
         })
-        
+
     return emails
-
-if __name__ == "__main__":
-    emails = fetch_emails()
-    for i, email in enumerate(emails, 1):
-        print(f"\nEmail {i}:")
-        print(f"From: {email['sender']}")
-        print(f"Subject: {email['subject']}")
-        print(f"Preview: {email['snippet'][:100]}")
-
-
-
-if __name__ == "__main__":
-    emails = fetch_emails()
-    print("\n--- RAW EMAILS ---")
-    for i, email in enumerate(emails, 1):
-        print(f"\nEmail {i}:")
-        print(f"From: {email['sender']}")
-        print(f"Subject: {email['subject']}")
-
-    print("\n--- GROQ SUMMARY ---")
-    summary = summarize_emails(emails)
-    print(summary)
